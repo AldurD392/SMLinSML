@@ -1,11 +1,6 @@
-(* Le costanti, sono semplicemente gli interi (e inseriamo l'elemento nullo per comodità). *)
-datatype Constant =
-	Const of int
-;
-
 (* Il tipo per il linguaggio Fun. *)
 datatype Fun =
-	K of Constant
+	K of int
 	| Var of string
 	| Plus of Fun * Fun
 	| Let of string * Fun * Fun
@@ -14,15 +9,13 @@ datatype Fun =
 ;
 
 (* L'ambiente, può essere un valore (cioè una costante o una chiusura). *)
-datatype Env =
+datatype 'a Env =
 	EnvEmpty
-	| EnvValue of string * Constant
-	| EnvClosure of string * Fun * Env
-	| EnvList of Env * Env
+	| EnvList of 'a Env * (string * 'a)
 ;
 
 datatype Values =
 	VNone
-	| VConst of Constant
-	| VClosure of string * Fun * Env
+	| VConst of int
+	| VClosure of (string * Fun * Values Env)
 ;

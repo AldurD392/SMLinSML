@@ -4,52 +4,72 @@ use "FunDatatype.sml";
 (* Valutatore per ambienti. *)
 fun EvalEnv (inputVariable, EnvEmpty) =
 		VNone
-	| EvalEnv (inputVariable, EnvValue(variable, value)) =
-		if inputVariable = variable then
-			VConst (value)
+	| EvalEnv (inputVariable, EnvList(e, (x, value))) =
+		if x = inputVariable then
+			value
 		else
-			VNone
-	| EvalEnv (inputVariable, EnvClosure(variable, expression, enviroment)) =
-		if inputVariable = variable then
-			VClosure (variable, expression, enviroment)
-		else
-			VNone
-	| EvalEnv (inputVariable, EnvList(eone, etwo)) =
-		if not (EvalEnv(inputVariable, etwo) = VNone) then
-			EvalEnv(inputVariable, etwo)
-		else
-			EvalEnv(inputVariable, eone)
+			EvalEnv(inputVariable, e)
 ;
 
-(* Valutatore per costanti. *)
-fun EvalConst (Const(c)) = c;
+(* Valutatore per i valori.
+Questa funzione andrà usata alla fine per valutare il valore prodotto da Eval.
+Si devono considerare tutti e tre i casi, ma si dovrebbe arrivare a valutare soltanto costanti.
+*)
 
-(* Valutatore per i valori degli ambienti. *)
 fun EvalValues VNone =	0
-	| EvalValues (VConst(c)) = EvalConst(c)
+	| EvalValues (VConst(c)) = c
 	| EvalValues (VClosure(x, f, e)) = 0
 ;
 
-(* Valutatore per variabili. *)
-fun EvalVar (Var(v), EnvList(e1, e2)) =
-	EvalValues (EvalEnv (v, EnvList(e1, e2)))
-;
-
-(* Valutatore per funzioni. *)
-fun EvalFun (Fun(x, m), EnvList(e1, e2)) =
-	EnvClosure(x, m, EnvList(e1, e2))
-;
+fun ValuesToTuple(VClosure(x, y, z)) =
+	(x, y, z);
 
 (* Valutatore per il linguaggio Fun. *)
-fun Eval (K(k), EnvList (e1, e2)) =
-		EvalConst (k)
-	| Eval (Var(v), EnvList (e1, e2)) =
-		EvalVar (Var(v), EnvList (e1, e2))
-	| Eval (Plus(p, q), EnvList (e1, e2)) =
-		Eval (p, EnvList(e1, e2)) + Eval(q, EnvList(e1, e2))
-	| Eval (Let(x, m, n), EnvList(e1, e2)) =
-		Eval(n, EnvList(EnvList(e1, e2), EnvValue(x, Const(Eval(m, EnvList(e1, e2))))))
-	| Eval (Fun(x, m), EnvList(e1, e2)) =
-		EvalValues (VClosure (x, m, EnvList(e1, e2)))
-	(*| Eval (App (f, x), EnvList(e1, e2)) =*)
+fun Eval (K(k), EnvList (e, (x, value))) =
+		VConst (k)
+	| Eval (K(k), EnvEmpty) =
+			VConst (k)
+
+	| Eval (Var(v), EnvList (e, (x, value))) =
+		EvalEnv (v, EnvList(e, (x, value)))
+	| Eval (Var(v), EnvEmpty) =
+		EvalEnv (v, EnvEmpty)
+
+
+	| Eval (Plus(p, q), EnvList (e, (x, value))) =
+		VConst(EvalValues(Eval (p, EnvList(e, (x, value)))) + EvalValues(Eval(q, EnvList(e, (x, value)))))
+	| Eval (Plus(p, q), EnvEmpty) =
+		VConst(EvalValues(Eval (p, EnvEmpty)) + EvalValues(Eval(q, EnvEmpty)))
+
+	| Eval (Let(var, m, n), EnvList(e, (x, value))) =
+		Eval(n, EnvList(EnvList(e, (x, value)), (var, Eval(m, EnvList(e, (x, value))))))
+	| Eval (Let(var, m, n), EnvEmpty) =
+		Eval(n, EnvList(EnvEmpty, (var, Eval(m, EnvEmpty))))
+
+	| Eval (Fun(var, m), EnvList(e, (x, value))) =
+		VClosure (var, m, EnvList(e, (x, value)))
+	| Eval (Fun(var, m), EnvEmpty) =
+		VClosure (var, m, EnvEmpty)
+
+	| Eval (App (f, var), EnvList(e, (x, value))) =
+		Eval(
+		    #2 (ValuesToTuple(Eval(f, EnvList(e, (x, value))))),
+		    EnvList(
+		    	#3 (ValuesToTuple(Eval(f, EnvList(e, (x, value))))),
+		    	(#1 (ValuesToTuple(Eval(f, EnvList(e, (x, value))))),
+		    		Eval(var, EnvList(e, (x, value)))
+		    	)
+		    )
+		)
+	| Eval (App (f, var), EnvEmpty) =
+		Eval(
+		    #2 (ValuesToTuple(Eval(f, EnvEmpty))),
+		    EnvList(
+		    	#3 (ValuesToTuple(Eval(f, EnvEmpty))),
+		    	(#1 (ValuesToTuple(Eval(f, EnvEmpty))),
+		    		Eval(var, EnvEmpty)
+		    	)
+		    )
+		)
 ;
+

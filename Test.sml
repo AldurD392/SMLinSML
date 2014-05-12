@@ -2,7 +2,11 @@
 use "FunEval.sml";
 
 (* Creiamo un ambiente di prova. *)
-val e = EnvList(EnvValue("x", Const(3)), EnvValue("y", Const(5)));
+val e = EnvList(
+            EnvList(
+            	EnvEmpty, ("x", VConst(3))
+        	), ("y", VConst(5))
+);
 
 (* Proviamo la somma. *)
 Eval(
@@ -10,7 +14,26 @@ Eval(
 );
 
 Eval(
-    Let("x", K(Const(3)),
-        Let("y", K(Const(5)), Plus(Var("x"), Var("y")))
-    ), EnvList(EnvEmpty, EnvEmpty)
+    Let("x", K(3),
+        Let("y", K(5), Plus(Var("x"), Var("y")))
+    ), EnvEmpty
 );
+
+
+fun ValuesToTuple(VClosure(x, y, z)) =
+	(x, y, z);
+
+VClosure("x", K(3), EnvEmpty);
+#1 (ValuesToTuple(VClosure("x", K(3), EnvEmpty)));
+
+Eval(
+    App(
+        Fun("x", Plus(Var("x"), K(1))),
+        K(5)
+    ), EnvEmpty
+);
+
+
+
+
+
