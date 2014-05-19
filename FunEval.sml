@@ -1,75 +1,141 @@
-(* Importiamo il tipo. *)
+(* Importiamo. *)
 use "FunDatatype.sml";
 
+fun Max (a, b) =
+	if a > b then a else b;
+
+(* Funzione per le nuove locazioni dello store. *)
+fun NewLocation (StoreEmpty) =
+		1
+	| NewLocation (StoreList (s, (sl, value))) =
+		Max(NewLocation(s), sl) + 1
+;
+
 (* Valutatore per ambienti. *)
+exception EnvException
 fun EvalEnv (inputVariable, EnvEmpty) =
-		VNone
-	| EvalEnv (inputVariable, EnvList(e, (x, value))) =
+		raise EnvException
+	| EvalEnv (inputVariable, EnvList(e, (x, l))) =
 		if x = inputVariable then
-			value
+			l
 		else
 			EvalEnv(inputVariable, e)
 ;
 
-(* Valutatore per i valori.
-Questa funzione andrà usata alla fine per valutare il valore prodotto da Eval.
-Si devono considerare tutti e tre i casi, ma si dovrebbe arrivare a valutare soltanto costanti.
-*)
-
-fun EvalValues VNone =	0
-	| EvalValues (VConst(c)) = c
-	| EvalValues (VClosure(x, f, e)) = 0
+exception StoreException
+fun EvalStore (inputLocation, StoreEmpty) =
+		raise StoreException
+	| EvalStore (inputLocation, StoreList(s, (l, value))) =
+		if l = inputLocation then
+			value
+		else
+			EvalStore(inputLocation, s)
 ;
 
+(* Valutatore per i booleani. *)
+fun EvalBool b =
+	if b then 1 else 0
+;
+
+(* Valutatore per le costanti. *)
+fun EvalConst (KInt(i)) = i
+	| EvalConst (KBool(b)) = EvalBool(b)
+;
+
+(* Valutatore per costanti che ritorna booleani. *)
+fun EvalConstAsBool (KInt(i)) = if i > 0 then true else false
+	| EvalConstAsBool (KBool(b)) = b
+;
+
+(*
 fun ValuesToTuple(VClosure(x, y, z)) =
 	(x, y, z);
 
-(* Valutatore per il linguaggio Fun. *)
-fun Eval (K(k), EnvList (e, (x, value))) =
-		VConst (k)
-	| Eval (K(k), EnvEmpty) =
-			VConst (k)
+*)
 
-	| Eval (Var(v), EnvList (e, (x, value))) =
-		EvalEnv (v, EnvList(e, (x, value)))
-	| Eval (Var(v), EnvEmpty) =
-		EvalEnv (v, EnvEmpty)
+(* Valutatore per le espressioni (EXP). *)
 
-
-	| Eval (Plus(p, q), EnvList (e, (x, value))) =
-		VConst(EvalValues(Eval (p, EnvList(e, (x, value)))) + EvalValues(Eval(q, EnvList(e, (x, value)))))
-	| Eval (Plus(p, q), EnvEmpty) =
-		VConst(EvalValues(Eval (p, EnvEmpty)) + EvalValues(Eval(q, EnvEmpty)))
-
-	| Eval (Let(var, m, n), EnvList(e, (x, value))) =
-		Eval(n, EnvList(EnvList(e, (x, value)), (var, Eval(m, EnvList(e, (x, value))))))
-	| Eval (Let(var, m, n), EnvEmpty) =
-		Eval(n, EnvList(EnvEmpty, (var, Eval(m, EnvEmpty))))
-
-	| Eval (Fun(var, m), EnvList(e, (x, value))) =
-		VClosure (var, m, EnvList(e, (x, value)))
-	| Eval (Fun(var, m), EnvEmpty) =
-		VClosure (var, m, EnvEmpty)
-
-	| Eval (App (f, var), EnvList(e, (x, value))) =
-		Eval(
-		    #2 (ValuesToTuple(Eval(f, EnvList(e, (x, value))))),
-		    EnvList(
-		    	#3 (ValuesToTuple(Eval(f, EnvList(e, (x, value))))),
-		    	(#1 (ValuesToTuple(Eval(f, EnvList(e, (x, value))))),
-		    		Eval(var, EnvList(e, (x, value)))
-		    	)
-		    )
+(*
+	ENV = EnvList (e, (x, el))
+	STORE = StoreList (s, (sl, value))
+*)
+fun EvalExp (Const(k), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		k
+	| EvalExp (Var(v), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		(* TODO: handle exception? *)
+		(* TODO: handle EnvEmpty? *)
+		EvalStore(
+			(EvalEnv(
+			    v, EnvList (e, (x, el))
+			    )),
+			StoreList (s, (sl, value))
 		)
-	| Eval (App (f, var), EnvEmpty) =
-		Eval(
-		    #2 (ValuesToTuple(Eval(f, EnvEmpty))),
-		    EnvList(
-		    	#3 (ValuesToTuple(Eval(f, EnvEmpty))),
-		    	(#1 (ValuesToTuple(Eval(f, EnvEmpty))),
-		    		Eval(var, EnvEmpty)
-		    	)
-		    )
+	| EvalExp (Plus(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		KInt(
+		    EvalConst(EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) +
+		    EvalConst(EvalExp(n, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+		)
+	| EvalExp (Less(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		KBool(
+		    EvalConst(EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) <
+		    EvalConst(EvalExp(n, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+		)
+	| EvalExp (Greater(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		KBool(
+		    EvalConst(EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) >
+		    EvalConst(EvalExp(n, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+		)
+	| EvalExp (Equal(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		KBool(
+		    EvalConst(EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) =
+		    EvalConst(EvalExp(n, EnvList (e, (x, el)), StoreList (s, (sl, value))))
 		)
 ;
 
+fun EvalImp	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		StoreList (s, (sl, value))
+
+	| EvalImp (Concat(p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		EvalImp	(q, EnvList (e, (x, el)), EvalImp (p, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+
+	| EvalImp (If(m, p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		if EvalConstAsBool(EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) then
+			EvalImp (p, EnvList (e, (x, el)), StoreList (s, (sl, value)))
+		else
+			EvalImp (q, EnvList (e, (x, el)), StoreList (s, (sl, value)))
+
+	| EvalImp (While(m, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		if EvalConstAsBool(EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) then
+			EvalImp(While(m, p), EnvList (e, (x, el)), EvalImp (p, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+		else
+			StoreList (s, (sl, value))
+
+	| EvalImp (Variable(v, m, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		let
+			val l = NewLocation(StoreList (s, (sl, value)))
+		in
+			EvalImp(
+		        p,
+		        EnvList(
+		            EnvList (e, (x, el)),
+		            (v, l)
+		        ),
+				StoreList(
+				    StoreList (s, (sl, value)),
+					(
+						l,
+						EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))
+					)
+				)
+			)
+		end
+
+	| EvalImp (Assign(v, m), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		StoreList(
+		    StoreList(s, (sl, value)),
+		    (
+		    	EvalEnv(v, EnvList (e, (x, el))),
+		    	EvalExp(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))
+		   	)
+		)
+;

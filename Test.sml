@@ -4,36 +4,66 @@ use "FunEval.sml";
 (* Creiamo un ambiente di prova. *)
 val e = EnvList(
             EnvList(
-            	EnvEmpty, ("x", VConst(3))
-        	), ("y", VConst(5))
+            	EnvEmpty, ("x", 1)
+        	), ("y", 2)
+);
+
+val s = StoreList(
+            StoreList(
+                StoreEmpty, (1, KInt(10))
+            ), (2, KInt(20))
+);
+
+(* Proviamo a valutare una variabile: *)
+EvalExp(
+    Var("x"), e, s
 );
 
 (* Proviamo la somma. *)
-Eval(
-    Plus(Var("x"), Var("y")), e
+EvalConst(
+    EvalExp(
+        Greater(Var("x"), Var("y")), e, s
+    )
 );
 
-Eval(
-    Let("x", K(3),
-        Let("y", K(5), Plus(Var("x"), Var("y")))
-    ), EnvEmpty
+EvalImp(
+    Variable(
+        "x",
+        Const(KInt(7)),
+        Variable(
+            "y",
+            Const(KInt(9)),
+            If(
+               Greater(
+                    Var("x"),
+                    Var("y")
+                ),
+               Concat(
+                   Assign(
+                        "y",
+                        Plus(
+                            Var("y"),
+                            Const(KInt(1))
+                        )
+                    ),
+                   Assign(
+                        "x",
+                        Plus(
+                            Var("x"),
+                            Const(KInt(1))
+                        )
+                    )
+               ),
+               Assign(
+                    "x",
+                    Plus(
+                        Var("x"),
+                        Var("y")
+                    )
+                )
+            )
+        )
+    ),
+    e,
+    s
 );
-
-
-fun ValuesToTuple(VClosure(x, y, z)) =
-	(x, y, z);
-
-VClosure("x", K(3), EnvEmpty);
-#1 (ValuesToTuple(VClosure("x", K(3), EnvEmpty)));
-
-Eval(
-    App(
-        Fun("x", Plus(Var("x"), K(1))),
-        K(5)
-    ), EnvEmpty
-);
-
-
-
-
-

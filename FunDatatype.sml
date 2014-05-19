@@ -1,21 +1,38 @@
-(* Il tipo per il linguaggio Fun. *)
-datatype Fun =
-	K of int
+(* Il tipo per il linguaggio Imp. *)
+
+(* Le costanti (aka i valori). *)
+datatype K =
+	KInt of int
+	| KBool of bool
+
+(* Le epsressioni *)
+datatype Exp =
+	Const of K
 	| Var of string
-	| Plus of Fun * Fun
-	| Let of string * Fun * Fun
-	| Fun of string * Fun
-	| App of Fun * Fun
+	| Plus of Exp * Exp
+	| Less of Exp * Exp
+	| Greater of Exp * Exp
+	| Equal of Exp * Exp
 ;
 
-(* L'ambiente, può essere un valore (cioè una costante o una chiusura). *)
-datatype 'a Env =
+(* Il linguaggio *)
+datatype Imp =
+	Skip
+	| Concat of Imp * Imp
+	| If of Exp * Imp * Imp
+	| While of Exp * Imp
+	| Variable of string * Exp * Imp
+	| Assign of string * Exp
+;
+
+(* L'ambiente, vuoto o una locazione. *)
+datatype Env =
 	EnvEmpty
-	| EnvList of 'a Env * (string * 'a)
+	| EnvList of Env * (string * int)
 ;
 
-datatype Values =
-	VNone
-	| VConst of int
-	| VClosure of (string * Fun * Values Env)
+(* Lo store, vuoto oppure un valore. *)
+datatype Store =
+	StoreEmpty
+	| StoreList of Store * (int * K)
 ;
