@@ -1,11 +1,11 @@
 (* Importiamo il valutatore. *)
-use "FunEval.sml";
+use "Eval.sml";
 
 (* Creiamo un ambiente di prova. *)
 val e = EnvList(
             EnvList(
-            	EnvEmpty, ("x", 1)
-        	), ("y", 2)
+            	EnvEmpty, ("x", EVIArray(Array.fromList([1])))
+        	), ("y", EVIArray(Array.fromList([2, 4])))
 );
 
 val s = StoreList(
@@ -14,19 +14,21 @@ val s = StoreList(
             ), (2, KInt(20))
 );
 
-(* Proviamo a valutare una variabile: *)
-EvalExp(
-    Var("x"), e, s
-);
+(* Proviamo a valutare una espressione sinistra: *)
+EvalV (
+        Arr("y", Const(KInt(1))),
+        e,
+        s
+    );
 
 (* Proviamo la somma. *)
-EvalConst(
+(*EvalConst(
     EvalExp(
         Greater(Var("x"), Var("y")), e, s
     )
 );
-
-EvalImp(
+*)
+(*EvalImp(
     Variable(
         "x",
         Const(KInt(7)),
@@ -66,4 +68,4 @@ EvalImp(
     ),
     e,
     s
-);
+);*)
