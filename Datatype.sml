@@ -52,3 +52,9 @@ datatype Store =
 	StoreEmpty
 	| StoreList of Store * (int * K)
 ;
+
+(* Wrapper dei valori di riorno delle funzioni EvalVM *)
+datatype AllValue =
+	Location of int
+	| Constant of K
+;

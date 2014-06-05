@@ -19,13 +19,13 @@ fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 		EvalAll	(q, EnvList (e, (x, el)), EvalAll (p, EnvList (e, (x, el)), StoreList (s, (sl, value))))
 
 	| EvalAll (If(m, p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
-		if EvalIntAsBool(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) then
+		if EvalBool(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))) then
 			EvalAll (p, EnvList (e, (x, el)), StoreList (s, (sl, value)))
 		else
 			EvalAll (q, EnvList (e, (x, el)), StoreList (s, (sl, value)))
 
 	| EvalAll (While(m, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
-		if EvalIntAsBool(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))) then
+		if EvalBool(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))) then
 			EvalAll(While(m, p), EnvList (e, (x, el)), EvalAll (p, EnvList (e, (x, el)), StoreList (s, (sl, value))))
 		else
 			StoreList (s, (sl, value))
@@ -44,7 +44,7 @@ fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 				    StoreList (s, (sl, value)),
 					(
 						l,
-						KInt(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+						EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))
 					)
 				)
 			)
@@ -54,8 +54,18 @@ fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 		StoreList(
 		    StoreList(s, (sl, value)),
 		    (
-		    	EvalV(v, EnvList (e, (x, el)), StoreList (s, (sl, value))),
-		    	KInt(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+		    	EvalAllLocation(EvalV(v, EnvList (e, (x, el)), StoreList (s, (sl, value)))),
+		    	EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))
 		   	)
+		)
+
+	| EvalAll (Proc(y, arg, p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		EvalAll(
+			q,
+			EnvList(
+			    EnvList(e, (x, el)),
+			    (y, EVClosure(arg, p, EnvList(e, (x, el))))
+			),
+			StoreList (s, (sl, value))
 		)
 ;
