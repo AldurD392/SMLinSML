@@ -17,11 +17,9 @@ fun EvalAllValue (Constant(c)) = c ;
 (* Valutatore per costanti che ritorna booleani. *)
 fun EvalIntAsBool (i) = if i > 0 then true else false;
 
-(*
+(* Estrai i valori da una EVClousure. *)
 fun ValuesToTuple(EVClosure(x, y, z)) =
 	(x, y, z);
-
-*)
 
 (* TODO: Non dovremmo mai cercare il valore di una chiusura, no? *)
 fun EvalValue (EVIArray(i)) =

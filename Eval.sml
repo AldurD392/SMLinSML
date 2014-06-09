@@ -1,15 +1,5 @@
 (* Importiamo. *)
-use "EvalVM.sml";
-
-(* Funzione per il massimo. *)
-fun Max (a, b) = if a > b then a else b;
-
-(* Funzione per le nuove locazioni dello store. *)
-fun NewLocation (StoreEmpty) =
-		1
-	| NewLocation (StoreList (s, (sl, value))) =
-		Max(NewLocation(s), sl) + 1
-;
+use "Tools.sml";
 
 (* Valutatore per il linguaggio All. *)
 fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
@@ -50,6 +40,21 @@ fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 			)
 		end
 
+	| EvalAll (Array(v, mArray, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		let
+			val valuesList =
+				map
+				(fn var => EvalAllValue(EvalM(var, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+				(arrayToList mArray)
+			val locationsStoreTuple = NewArrayLocation(valuesList, StoreList (s, (sl, value)))
+		in
+			EvalAll(
+			    	p,
+			    	EnvList(EnvList (e, (x, el)), (v, EVIArray(Array.fromList(#1 (locationsStoreTuple))))),
+			    	#2 (locationsStoreTuple)
+			    )
+		end
+
 	| EvalAll (Assign(v, m), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 		StoreList(
 		    StoreList(s, (sl, value)),
@@ -68,4 +73,28 @@ fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 			),
 			StoreList (s, (sl, value))
 		)
+
+	| EvalAll (Call(y, arg), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+		let
+			val location = NewLocation(StoreList (s, (sl, value)))
+		in
+			let
+			 	val tuple = ValuesToTuple(EvalEnv(y, EnvList (e, (x, el))))
+			in
+			 	EvalAll(
+			 	    #2 tuple,
+			 	    EnvList (
+			 	        #3 tuple,
+			 	        (
+			 	        	#1 tuple,
+			 	        	EVIArray(Array.fromList([location]))
+			 	        )
+			 	    ),
+			 	    StoreList(
+						StoreList (s, (sl, value)),
+						(location, EvalAllValue(EvalM(arg, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+					)
+			 	)
+			end
+		end
 ;
