@@ -28,3 +28,11 @@ fun NewArrayLocation (nil, store) =
 		end
 ;
 
+fun PrintStore (StoreEmpty) =
+		print "\n"
+	| PrintStore (StoreList (s, (sl, value))) =
+		(
+			PrintStore(s);
+			print (Int.toString(sl) ^ " " ^ PrintK(value) ^ "\n")
+		)
+;

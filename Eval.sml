@@ -2,84 +2,93 @@
 use "Tools.sml";
 
 (* Valutatore per il linguaggio All. *)
-fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
-		StoreList (s, (sl, value))
+(* Regola dello skip. *)
+fun EvalAll	(Skip, env, store) =
+		store
 
-	| EvalAll (Concat(p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
-		EvalAll	(q, EnvList (e, (x, el)), EvalAll (p, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+	(* Regola della concatenazione. *)
+	| EvalAll (Concat(p, q), env, store) =
+		EvalAll	(q, env, EvalAll (p, env, store))
 
-	| EvalAll (If(m, p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
-		if EvalBool(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))) then
-			EvalAll (p, EnvList (e, (x, el)), StoreList (s, (sl, value)))
+	(* Regola dell'IF. *)
+	| EvalAll (If(m, p, q), env, store) =
+		if EvalBool(EvalAllValue(EvalM(m, env, store))) then
+			EvalAll (p, env, store)
 		else
-			EvalAll (q, EnvList (e, (x, el)), StoreList (s, (sl, value)))
+			EvalAll (q, env, store)
 
-	| EvalAll (While(m, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
-		if EvalBool(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))) then
-			EvalAll(While(m, p), EnvList (e, (x, el)), EvalAll (p, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+	(* Regola del While. *)
+	| EvalAll (While(m, p), env, store) =
+		if EvalBool(EvalAllValue(EvalM(m, env, store))) then
+			EvalAll(While(m, p), env, EvalAll (p, env, store))
 		else
-			StoreList (s, (sl, value))
+			store
 
-	| EvalAll (Variable(v, m, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	(* Regola della variabile. *)
+	| EvalAll (Variable(v, m, p), env, store) =
 		let
-			val l = NewLocation(StoreList (s, (sl, value)))
+			val l = NewLocation(store)
 		in
 			EvalAll(
 		        p,
 		        EnvList(
-		            EnvList (e, (x, el)),
+		            env,
 		            (v, EVIArray(Array.fromList([l])))
 		        ),
 				StoreList(
-				    StoreList (s, (sl, value)),
+				    store,
 					(
 						l,
-						EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+						EvalAllValue(EvalM(m, env, store))
 					)
 				)
 			)
 		end
 
-	| EvalAll (Array(v, mArray, p), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	(* Regola dell'array. *)
+	| EvalAll (Array(v, mArray, p), env, store) =
 		let
 			val valuesList =
 				map
-				(fn var => EvalAllValue(EvalM(var, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+				(fn var => EvalAllValue(EvalM(var, env, store)))
 				(arrayToList mArray)
-			val locationsStoreTuple = NewArrayLocation(valuesList, StoreList (s, (sl, value)))
+			val locationsStoreTuple = NewArrayLocation(valuesList, store)
 		in
 			EvalAll(
 			    	p,
-			    	EnvList(EnvList (e, (x, el)), (v, EVIArray(Array.fromList(#1 (locationsStoreTuple))))),
+			    	EnvList(env, (v, EVIArray(Array.fromList(#1 (locationsStoreTuple))))),
 			    	#2 (locationsStoreTuple)
 			    )
 		end
 
-	| EvalAll (Assign(v, m), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	(* Regola dell'assegnamento. *)
+	| EvalAll (Assign(v, m), env, store) =
 		StoreList(
-		    StoreList(s, (sl, value)),
+		    store,
 		    (
-		    	EvalAllLocation(EvalV(v, EnvList (e, (x, el)), StoreList (s, (sl, value)))),
-		    	EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value))))
+		    	EvalAllLocation(EvalV(v, env, store)),
+		    	EvalAllValue(EvalM(m, env, store))
 		   	)
 		)
 
-	| EvalAll (Proc(y, arg, p, q), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	(* Regola della procedura. *)
+	| EvalAll (Proc(y, arg, p, q), env, store) =
 		EvalAll(
 			q,
 			EnvList(
-			    EnvList(e, (x, el)),
-			    (y, EVClosure(arg, p, EnvList(e, (x, el))))
+			    env,
+			    (y, EVClosure(arg, p, env))
 			),
-			StoreList (s, (sl, value))
+			store
 		)
 
-	| EvalAll (Call(y, arg), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	(* Call by VALUE. *)
+	| EvalAll (Call(y, arg), env, store) =
 		let
-			val location = NewLocation(StoreList (s, (sl, value)))
+			val location = NewLocation(store)
 		in
 			let
-			 	val tuple = ValuesToTuple(EvalEnv(y, EnvList (e, (x, el))))
+			 	val tuple = ClosureToTuple(EvalEnv(y, env))
 			in
 			 	EvalAll(
 			 	    #2 tuple,
@@ -91,10 +100,28 @@ fun EvalAll	(Skip, EnvList (e, (x, el)), StoreList (s, (sl, value))) =
 			 	        )
 			 	    ),
 			 	    StoreList(
-						StoreList (s, (sl, value)),
-						(location, EvalAllValue(EvalM(arg, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+						store,
+						(location, EvalAllValue(EvalM(arg, env, store)))
 					)
 			 	)
 			end
 		end
+
+	(* Call by REFERENCE. *)
+(*	| EvalAll (Call(y, arg), env, store) =
+		let
+		 	val tuple = ClosureToTuple(EvalEnv(y, env))
+		in
+		 	EvalAll(
+		 	    #2 tuple,
+		 	    EnvList (
+		 	        #3 tuple,
+		 	        (
+		 	        	#1 tuple,
+		 	        	EVIArray(Array.fromList([EvalAllLocation(EvalV(arg, env, store))]))
+		 	        )
+		 	    ),
+				store
+		 	)
+		end*)
 ;

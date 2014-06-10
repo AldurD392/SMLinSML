@@ -6,16 +6,22 @@ datatype K =
 	| KBool of bool
 ;
 
-(* I left value. *)
-datatype 'a V =
-	Var of string
-	| Arr of string * 'a
+exception AdditionException
+fun KAdd(KInt x, KInt y) = KInt(x + y)
+	| KAdd(x, y) = raise AdditionException
 ;
 
+(* I left value. *)
+datatype V =
+	Var of string
+	| Arr of string * M
+
+and
+
 (* I right value. *)
-datatype M =
+M =
 	Const of K
-	| LeftV of M V
+	| LeftV of V
 	| Plus of M * M
 	| Less of M * M
 	| Greater of M * M
@@ -30,9 +36,10 @@ datatype All =
 	| While of M * All
 	| Variable of string * M * All
 	| Array of string * M array * All
-	| Assign of M V * M
+	| Assign of V * M
 	| Proc of string * string * All * All
 	| Call of string * M
+	(*| Call of string * V*)
 ;
 
 (* Possibili valori dell'ambiente: array di intero o chiusura. *)

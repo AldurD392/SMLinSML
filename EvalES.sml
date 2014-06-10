@@ -11,8 +11,8 @@ fun EvalEnv (inputVariable, EnvEmpty) =
 			EvalEnv(inputVariable, e)
 ;
 
-exception StoreException
 (* Valutatore per Store. *)
+exception StoreException
 fun EvalStore (inputLocation, StoreEmpty) =
 		raise StoreException
 	| EvalStore (inputLocation, StoreList(s, (l, value))) =

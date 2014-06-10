@@ -1,64 +1,63 @@
 use "EvalES.sml";
 
 (* Valutatore per le espressioni sinistre. *)
-fun EvalV (Var(v), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+fun EvalV (Var(v), env, store) =
 		Location(
-		    Array.sub(EvalValue(EvalEnv(v, EnvList (e, (x, el)))), 0)
+		    Array.sub(EvalValue(EvalEnv(v, env)), 0)
 		)
-	| EvalV (Arr(a, m), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	| EvalV (Arr(a, m), env, store) =
 		Location(
 		    Array.sub(
-		        EvalValue(EvalEnv(a, EnvList (e, (x, el)))),
-		        EvalConst(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+		        EvalValue(EvalEnv(a, env)),
+		        EvalConst(EvalAllValue(EvalM(m, env, store)))
 		    )
 		)
 and
 
 (* Valutatore per le espressioni destre. *)
-	EvalM (Const(k), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	EvalM (Const(k), env, store) =
 		Constant(k)
 
-	| EvalM (LeftV(v), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	| EvalM (LeftV(v), env, store) =
 		Constant(
 			EvalStore(
-				EvalAllLocation(EvalV (v, EnvList (e, (x, el)), StoreList (s, (sl, value)))),
-				StoreList (s, (sl, value))
+				EvalAllLocation(EvalV (v, env, store)),
+				store
 			)
 		)
 
-	| EvalM (Plus(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	| EvalM (Plus(m, n), env, store) =
 	    Constant(
-	        KInt(
-			    EvalConst(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
-			    +
-			    EvalConst(EvalAllValue(EvalM(n, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
-		    )
+	        KAdd(
+			    EvalAllValue(EvalM(m, env, store)),
+			    EvalAllValue(EvalM(n, env, store))
+			)
 	    )
 
-	| EvalM (Less(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	| EvalM (Less(m, n), env, store) =
 		Constant(
 			KBool(
-			    EvalConst(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+			    EvalConst(EvalAllValue(EvalM(m, env, store)))
 			    <
-			    EvalConst(EvalAllValue(EvalM(n, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+			    EvalConst(EvalAllValue(EvalM(n, env, store)))
 			)
 		)
 
-	| EvalM (Greater(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	| EvalM (Greater(m, n), env, store) =
 		Constant(
 			KBool(
-			    EvalConst(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+			    EvalConst(EvalAllValue(EvalM(m, env, store)))
 			    >
-			    EvalConst(EvalAllValue(EvalM(n, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+			    EvalConst(EvalAllValue(EvalM(n, env, store)))
 			)
 		)
 
-	| EvalM (Equal(m, n), EnvList (e, (x, el)), StoreList (s, (sl, value))) =
+	| EvalM (Equal(m, n), env, store) =
 		Constant(
 			KBool(
-			    EvalConst(EvalAllValue(EvalM(m, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+			    EvalConst(EvalAllValue(EvalM(m, env, store)))
 			    =
-			    EvalConst(EvalAllValue(EvalM(n, EnvList (e, (x, el)), StoreList (s, (sl, value)))))
+			    EvalConst(EvalAllValue(EvalM(n, env, store)))
 			)
 		)
 ;

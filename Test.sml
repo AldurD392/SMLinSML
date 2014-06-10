@@ -14,58 +14,48 @@ val s = StoreList(
             ), (2, KInt(20))
 );
 
-(* Proviamo a valutare una espressione sinistra: *)
-EvalV (
-        Arr("y", Const(KInt(1))),
-        e,
-        s
-    );
-
-(* Proviamo la somma. *)
-(*EvalConst(
-    EvalExp(
-        Greater(Var("x"), Var("y")), e, s
-    )
-);
+(*
+    CALL BY VALUE,
+    let x = 0 in array y = [4, 5, 6] in proc z(w) is x := 1; y[w] := 42 in z(x)
 *)
-(*EvalImp(
-    Variable(
-        "x",
-        Const(KInt(7)),
-        Variable(
-            "y",
-            Const(KInt(9)),
-            If(
-               Greater(
-                    Var("x"),
-                    Var("y")
-                ),
-               Concat(
-                   Assign(
-                        "y",
-                        Plus(
-                            Var("y"),
-                            Const(KInt(1))
-                        )
-                    ),
-                   Assign(
-                        "x",
-                        Plus(
-                            Var("x"),
-                            Const(KInt(1))
-                        )
-                    )
-               ),
-               Assign(
-                    "x",
-                    Plus(
-                        Var("x"),
-                        Var("y")
+let
+    val program =
+        Variable("x", Const(KInt(0)),
+            Array("y", Array.fromList([Const(KInt(4)), Const(KInt(5)), Const(KInt(6))]),
+                    Proc(
+                        "z",
+                        "w",
+                        Concat(
+                            Assign(Var("x"), Const(KInt(1))),
+                            Assign(Arr("y", LeftV(Var("w"))), Const(KInt(42)))
+                        ),
+                        Call("z", LeftV(Var("x")))
                     )
                 )
             )
-        )
-    ),
-    e,
-    s
-);*)
+in
+    PrintStore(EvalAll(program, e, s))
+end;
+
+(*
+    CALL BY REFERENCE,
+    let x = 0 in array y = [4, 5, 6] in proc z(w) is x := 1; y[w] := 42 in z(x)
+*)
+(*let
+    val program =
+        Variable("x", Const(KInt(0)),
+            Array("y", Array.fromList([Const(KInt(4)), Const(KInt(5)), Const(KInt(6))]),
+                    Proc(
+                        "z",
+                        "w",
+                        Concat(
+                            Assign(Var("x"), Const(KInt(1))),
+                            Assign(Arr("y", LeftV(Var("w"))), Const(KInt(42)))
+                        ),
+                        Call("z", Var("x"))
+                    )
+                )
+            )
+in
+    PrintStore(EvalAll(program, e, s))
+end;*)
