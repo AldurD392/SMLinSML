@@ -18,7 +18,7 @@ val s = StoreList(
     CALL BY VALUE,
     let x = 0 in array y = [4, 5, 6] in proc z(w) is x := 1; y[w] := 42 in z(x)
 *)
-let
+(*let
     val program =
         Variable("x", Const(KInt(0)),
             Array("y", Array.fromList([Const(KInt(4)), Const(KInt(5)), Const(KInt(6))]),
@@ -36,12 +36,12 @@ let
 in
     PrintStore(EvalAll(program, e, s))
 end;
-
+*)
 (*
     CALL BY REFERENCE,
     let x = 0 in array y = [4, 5, 6] in proc z(w) is x := 1; y[w] := 42 in z(x)
 *)
-(*let
+let
     val program =
         Variable("x", Const(KInt(0)),
             Array("y", Array.fromList([Const(KInt(4)), Const(KInt(5)), Const(KInt(6))]),
@@ -58,4 +58,4 @@ end;
             )
 in
     PrintStore(EvalAll(program, e, s))
-end;*)
+end;

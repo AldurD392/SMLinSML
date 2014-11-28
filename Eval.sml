@@ -83,7 +83,7 @@ fun EvalAll	(Skip, env, store) =
 		)
 
 	(* Call by VALUE. *)
-	| EvalAll (Call(y, arg), env, store) =
+(*	| EvalAll (Call(y, arg), env, store) =
 		let
 			val location = NewLocation(store)
 		in
@@ -105,10 +105,10 @@ fun EvalAll	(Skip, env, store) =
 					)
 			 	)
 			end
-		end
+		end*)
 
 	(* Call by REFERENCE. *)
-(*	| EvalAll (Call(y, arg), env, store) =
+	| EvalAll (Call(y, arg), env, store) =
 		let
 		 	val tuple = ClosureToTuple(EvalEnv(y, env))
 		in
@@ -123,5 +123,5 @@ fun EvalAll	(Skip, env, store) =
 		 	    ),
 				store
 		 	)
-		end*)
+		end
 ;

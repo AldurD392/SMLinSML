@@ -38,8 +38,8 @@ datatype All =
 	| Array of string * M array * All
 	| Assign of V * M
 	| Proc of string * string * All * All
-	| Call of string * M
-	(*| Call of string * V*)
+	(*| Call of string * M*)
+	| Call of string * V
 ;
 
 (* Possibili valori dell'ambiente: array di intero o chiusura. *)
